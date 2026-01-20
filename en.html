@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WAV → MP3 변환기 (브라우저)</title>
-  <meta name="description" content="✨ 변환은 브라우저에서만 수행됩니다. (서버 업로드 없음) 🔧 MP3 인코딩을 위해 ffmpeg.wasm을 로드합니다." />
-  <meta property="og:title" content="WAV → MP3 변환기 (브라우저)" />
-  <meta property="og:description" content="✨ 변환은 브라우저에서만 수행됩니다. (서버 업로드 없음) 🔧 MP3 인코딩을 위해 ffmpeg.wasm을 로드합니다." />
-  <meta property="og:image" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'><defs><linearGradient id='ogGrad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23667eea;stop-opacity:1' /><stop offset='100%' style='stop-color:%23764ba2;stop-opacity:1' /></linearGradient></defs><rect width='1200' height='630' fill='url(%23ogGrad)'/><text x='600' y='280' font-family='Arial, sans-serif' font-size='72' font-weight='bold' fill='white' text-anchor='middle'>🎵 WAV → MP3 변환기</text><text x='600' y='380' font-family='Arial, sans-serif' font-size='32' fill='rgba(255,255,255,0.9)' text-anchor='middle'>브라우저에서 안전하게 변환하세요</text><path d='M200 500 L200 400 L250 380 L250 480 Z M350 500 L350 350 L400 330 L400 480 Z M500 500 L500 400 L550 380 L550 480 Z M650 500 L650 350 L700 330 L700 480 Z M800 500 L800 400 L850 380 L850 480 Z' fill='white' opacity='0.8'/><circle cx='225' cy='400' r='8' fill='white'/><circle cx='375' cy='350' r='8' fill='white'/><circle cx='525' cy='400' r='8' fill='white'/><circle cx='675' cy='350' r='8' fill='white'/><circle cx='825' cy='400' r='8' fill='white'/></svg>" />
+  <title>WAV → MP3 Converter (Browser)</title>
+  <meta name="description" content="✨ Conversion is performed only in the browser. (No server upload) 🔧 Loads ffmpeg.wasm for MP3 encoding." />
+  <meta property="og:title" content="WAV → MP3 Converter (Browser)" />
+  <meta property="og:description" content="✨ Conversion is performed only in the browser. (No server upload) 🔧 Loads ffmpeg.wasm for MP3 encoding." />
+  <meta property="og:image" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'><defs><linearGradient id='ogGrad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23667eea;stop-opacity:1' /><stop offset='100%' style='stop-color:%23764ba2;stop-opacity:1' /></linearGradient></defs><rect width='1200' height='630' fill='url(%23ogGrad)'/><text x='600' y='280' font-family='Arial, sans-serif' font-size='72' font-weight='bold' fill='white' text-anchor='middle'>🎵 WAV → MP3 Converter</text><text x='600' y='380' font-family='Arial, sans-serif' font-size='32' fill='rgba(255,255,255,0.9)' text-anchor='middle'>Convert safely in your browser</text><path d='M200 500 L200 400 L250 380 L250 480 Z M350 500 L350 350 L400 330 L400 480 Z M500 500 L500 400 L550 380 L550 480 Z M650 500 L650 350 L700 330 L700 480 Z M800 500 L800 400 L850 380 L850 480 Z' fill='white' opacity='0.8'/><circle cx='225' cy='400' r='8' fill='white'/><circle cx='375' cy='350' r='8' fill='white'/><circle cx='525' cy='400' r='8' fill='white'/><circle cx='675' cy='350' r='8' fill='white'/><circle cx='825' cy='400' r='8' fill='white'/></svg>" />
   <meta property="og:type" content="website" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23667eea;stop-opacity:1' /><stop offset='100%' style='stop-color:%23764ba2;stop-opacity:1' /></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/><path d='M30 70 L30 40 L40 35 L40 65 Z M50 70 L50 30 L60 25 L60 65 Z M70 70 L70 35 L80 30 L80 65 Z' fill='white' opacity='0.9'/><circle cx='35' cy='40' r='3' fill='white'/><circle cx='55' cy='30' r='3' fill='white'/><circle cx='75' cy='35' r='3' fill='white'/></svg>" />
   <style>
@@ -16,7 +16,7 @@
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       margin: 0;
       padding: 24px;
       line-height: 1.6;
@@ -45,6 +45,38 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+    }
+    
+    .lang-switch {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      display: flex;
+      gap: 8px;
+    }
+    
+    .lang-switch button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    .lang-switch button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .lang-switch button.active {
+      background: rgba(255, 255, 255, 0.9);
+      color: #667eea;
+      border-color: rgba(255, 255, 255, 0.9);
     }
     
     .row {
@@ -236,38 +268,6 @@
       box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
     }
     
-    .lang-switch {
-      position: absolute;
-      top: 24px;
-      right: 24px;
-      display: flex;
-      gap: 8px;
-    }
-    
-    .lang-switch button {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-    }
-    
-    .lang-switch button:hover {
-      background: rgba(255, 255, 255, 0.3);
-      border-color: rgba(255, 255, 255, 0.5);
-    }
-    
-    .lang-switch button.active {
-      background: rgba(255, 255, 255, 0.9);
-      color: #667eea;
-      border-color: rgba(255, 255, 255, 0.9);
-    }
-    
     @media (max-width: 640px) {
       body {
         padding: 16px;
@@ -305,25 +305,25 @@
 </head>
 <body>
   <div class="lang-switch">
-    <button class="active">한국어</button>
-    <button onclick="window.location.href='en.html'">English</button>
+    <button onclick="window.location.href='index.html'">한국어</button>
+    <button class="active">English</button>
   </div>
   
   <div class="card">
-    <h1>🎵 WAV → MP3 변환기</h1>
+    <h1>🎵 WAV → MP3 Converter</h1>
     <div class="muted" style="margin-bottom: 8px;">
-      ✨ 변환은 브라우저에서만 수행됩니다. (서버 업로드 없음)<br>
-      🔧 MP3 인코딩을 위해 ffmpeg.wasm을 로드합니다.
-      <br><a href="guide.html" style="color: #667eea; text-decoration: none; font-weight: 600; margin-top: 8px; display: inline-block;">📖 사용 가이드 보기 →</a>
+      ✨ Conversion is performed only in the browser. (No server upload)<br>
+      🔧 Loads ffmpeg.wasm for MP3 encoding.
+      <br><a href="guide.html" style="color: #667eea; text-decoration: none; font-weight: 600; margin-top: 8px; display: inline-block;">📖 View Usage Guide →</a>
     </div>
 
     <div class="row" style="margin-top:16px;">
-      <label for="wavFile">WAV 파일</label>
+      <label for="wavFile">WAV File</label>
       <input id="wavFile" type="file" accept=".wav,audio/wav" />
     </div>
 
     <div class="row">
-      <label for="bitrate">MP3 비트레이트</label>
+      <label for="bitrate">MP3 Bitrate</label>
       <select id="bitrate">
         <option value="96k">96 kbps</option>
         <option value="128k" selected>128 kbps</option>
@@ -332,30 +332,30 @@
         <option value="320k">320 kbps</option>
       </select>
 
-      <button id="btnLoad">1) 변환 엔진 로드</button>
-      <button id="btnConvert" disabled>2) MP3로 변환</button>
+      <button id="btnLoad">1) Load Converter Engine</button>
+      <button id="btnConvert" disabled>2) Convert to MP3</button>
     </div>
 
     <div class="row">
-      <div id="status" class="muted">상태: 대기 중</div>
+      <div id="status" class="muted">Status: Waiting</div>
     </div>
 
     <div class="row">
-      <a id="download" href="#" download style="display:none; font-weight:700;">MP3 다운로드</a>
+      <a id="download" href="#" download style="display:none; font-weight:700;">Download MP3</a>
     </div>
 
     <div class="log" id="log"></div>
 
     <div class="tip-box">
       <div class="muted" style="margin:0;">
-        <span class="warn">💡 팁</span>:
-        파일이 크면(수십~수백 MB) 변환에 시간이 걸리고, 모바일은 메모리 부족으로 실패할 수 있어요.
+        <span class="warn">💡 Tip</span>:
+        Large files (tens to hundreds of MB) may take time to convert, and mobile devices may fail due to memory limitations.
       </div>
     </div>
     
     <div class="other-services">
       <a href="https://funnyfunny.cloud" target="_blank" rel="noopener noreferrer" class="other-services-btn">
-        🌐 다른 서비스 보기
+        🌐 View Other Services
       </a>
     </div>
   </div>
@@ -382,36 +382,32 @@
     let loaded = false;
 
     function setStatus(text) {
-      status.textContent = "상태: " + text;
+      status.textContent = "Status: " + text;
     }
 
     btnLoad.addEventListener("click", async () => {
       try {
         btnLoad.disabled = true;
-        setStatus("변환 엔진 로드 중...");
+        setStatus("Loading converter engine...");
         logBox.textContent = "";
 
-        // corePath 지정 없이도 동작하지만, 환경에 따라 명시가 안정적인 경우가 있습니다.
         ffmpeg = createFFmpeg({
           log: true,
-          // 필요 시 corePath를 고정할 수 있음(환경별 이슈 대응용):
-          // corePath: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js"
         });
 
         ffmpeg.setLogger(({ type, message }) => {
-          // type: info, fferr, ffout 등
           log(message);
         });
 
         await ffmpeg.load();
         loaded = true;
 
-        setStatus("로드 완료 ✅ 파일 선택 후 변환하세요");
+        setStatus("Loaded ✅ Please select a file and convert");
         btnConvert.disabled = false;
       } catch (e) {
         console.error(e);
-        setStatus("로드 실패 ❌ (콘솔 확인)");
-        log("로드 실패: " + (e?.message ?? String(e)));
+        setStatus("Load failed ❌ (Check console)");
+        log("Load failed: " + (e?.message ?? String(e)));
         btnLoad.disabled = false;
       }
     });
@@ -421,7 +417,7 @@
 
       const file = wavFile.files?.[0];
       if (!file) {
-        setStatus("WAV 파일을 먼저 선택하세요");
+        setStatus("Please select a WAV file first");
         return;
       }
 
@@ -433,18 +429,12 @@
 
       try {
         btnConvert.disabled = true;
-        setStatus("파일 로딩/쓰기 중...");
+        setStatus("Loading/writing file...");
         logBox.textContent = "";
 
-        // 가상 FS에 입력 파일 쓰기
         ffmpeg.FS("writeFile", inName, await fetchFile(file));
 
-        // 변환 옵션:
-        // -i input.wav
-        // -codec:a libmp3lame : mp3 인코더
-        // -b:a 128k : 비트레이트
-        // -vn : 영상 스트림 무시(안전)
-        setStatus("변환 중... (브라우저가 잠시 버벅일 수 있어요)");
+        setStatus("Converting... (Browser may lag briefly)");
         await ffmpeg.run(
           "-i", inName,
           "-codec:a", "libmp3lame",
@@ -453,31 +443,29 @@
           outName
         );
 
-        setStatus("결과 추출/다운로드 준비 중...");
+        setStatus("Extracting result/preparing download...");
         const data = ffmpeg.FS("readFile", outName);
 
         const mp3Blob = new Blob([data.buffer], { type: "audio/mpeg" });
         const url = URL.createObjectURL(mp3Blob);
 
-        // 다운로드 파일명: 원본이름 기반
         const base = file.name.replace(/\\.wav$/i, "");
         download.download = base + ".mp3";
         download.href = url;
         download.style.display = "inline-block";
-        download.textContent = "MP3 다운로드 (" + download.download + ")";
+        download.textContent = "Download MP3 (" + download.download + ")";
 
-        setStatus("완료 ✅");
-        log("변환 완료! 위의 다운로드 링크를 클릭하세요.");
+        setStatus("Complete ✅");
+        log("Conversion complete! Click the download link above.");
 
-        // 정리(선택): FS 파일 삭제
         try {
           ffmpeg.FS("unlink", inName);
           ffmpeg.FS("unlink", outName);
         } catch (_) {}
       } catch (e) {
         console.error(e);
-        setStatus("변환 실패 ❌ (콘솔 확인)");
-        log("변환 실패: " + (e?.message ?? String(e)));
+        setStatus("Conversion failed ❌ (Check console)");
+        log("Conversion failed: " + (e?.message ?? String(e)));
       } finally {
         btnConvert.disabled = false;
       }
@@ -485,4 +473,3 @@
   </script>
 </body>
 </html>
- 
