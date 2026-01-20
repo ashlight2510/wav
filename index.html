@@ -362,7 +362,7 @@
 
   <!-- ffmpeg.wasm (ESM) -->
   <script type="module">
-    import { createFFmpeg, fetchFile } from "https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/ffmpeg.min.js";
+    import { createFFmpeg, fetchFile } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/ffmpeg.min.js";
 
     const $ = (id) => document.getElementById(id);
     const wavFile = $("wavFile");
@@ -391,11 +391,10 @@
         setStatus("변환 엔진 로드 중...");
         logBox.textContent = "";
 
-        // corePath 지정 없이도 동작하지만, 환경에 따라 명시가 안정적인 경우가 있습니다.
+        // corePath를 jsdelivr로 지정하여 CORS 문제 해결
         ffmpeg = createFFmpeg({
           log: true,
-          // 필요 시 corePath를 고정할 수 있음(환경별 이슈 대응용):
-          // corePath: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js"
+          corePath: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js"
         });
 
         ffmpeg.setLogger(({ type, message }) => {
