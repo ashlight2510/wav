@@ -362,7 +362,7 @@
 
   <!-- ffmpeg.wasm (ESM) -->
   <script type="module">
-    import { createFFmpeg, fetchFile } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/ffmpeg.min.js";
+    import { createFFmpeg, fetchFile } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/ffmpeg.min.js";
 
     const $ = (id) => document.getElementById(id);
     const wavFile = $("wavFile");
@@ -394,7 +394,7 @@
         // corePath를 jsdelivr로 지정하여 CORS 문제 해결
         ffmpeg = createFFmpeg({
           log: true,
-          corePath: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js"
+          corePath: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js"
         });
 
         ffmpeg.setLogger(({ type, message }) => {
