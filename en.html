@@ -442,21 +442,21 @@
         setStatus("Loading/writing file...");
         logBox.textContent = "";
 
-        ffmpeg.FS("writeFile", inName, await fetchFile(file));
+        await ffmpeg.writeFile(inName, await fetchFile(file));
 
         setStatus("Converting... (Browser may lag briefly)");
-        await ffmpeg.run(
+        await ffmpeg.exec([
           "-i", inName,
           "-codec:a", "libmp3lame",
           "-b:a", bitrate.value,
           "-vn",
           outName
-        );
+        ]);
 
         setStatus("Extracting result/preparing download...");
-        const data = ffmpeg.FS("readFile", outName);
+        const data = await ffmpeg.readFile(outName);
 
-        const mp3Blob = new Blob([data.buffer], { type: "audio/mpeg" });
+        const mp3Blob = new Blob([data], { type: "audio/mpeg" });
         const url = URL.createObjectURL(mp3Blob);
 
         const base = file.name.replace(/\\.wav$/i, "");
