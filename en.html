@@ -361,13 +361,9 @@
   </div>
 
   <!-- ffmpeg.wasm (UMD) -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.min.js"></script>
+  <script src="./vendor/ffmpeg/util.min.js"></script>
+  <script src="./vendor/ffmpeg/ffmpeg.min.js"></script>
   <script>
-    // UMD 버전: FFmpegWasm 네임스페이스 사용
-    const { FFmpeg } = FFmpegWasm;
-    const { fetchFile, toBlobURL } = FFmpegUtil;
-
     const $ = (id) => document.getElementById(id);
     const wavFile = $("wavFile");
     const bitrate = $("bitrate");
@@ -378,36 +374,51 @@
     const download = $("download");
 
     const log = (msg) => {
-      logBox.textContent += msg + "\\n";
+      logBox.textContent += msg + "\n";
       logBox.scrollTop = logBox.scrollHeight;
     };
 
     let ffmpeg = null;
     let loaded = false;
+    let fetchFileFn = null;
+    let toBlobURLFn = null;
 
     function setStatus(text) {
       status.textContent = "Status: " + text;
     }
 
     btnLoad.addEventListener("click", async () => {
+      const ffmpegNS = window.FFmpegWASM || window.FFmpegWasm || window.FFmpeg || {};
+      const utilNS = window.FFmpegUtil || {};
+      const { FFmpeg } = ffmpegNS;
+      const { fetchFile, toBlobURL } = utilNS;
+
+      if (!FFmpeg || !fetchFile || !toBlobURL) {
+        setStatus("Local library load failed ❌");
+        log("Failed to load local FFmpeg scripts.");
+        btnLoad.disabled = true;
+        btnConvert.disabled = true;
+        return;
+      }
+
+      fetchFileFn = fetchFile;
+      toBlobURLFn = toBlobURL;
+
       try {
         btnLoad.disabled = true;
         setStatus("Loading converter engine...");
         logBox.textContent = "";
 
-        // FFmpeg 인스턴스 생성
         ffmpeg = new FFmpeg();
         
-        // 로그 설정
         ffmpeg.on('log', ({ message }) => {
           log(message);
         });
 
-        // Core와 WASM 파일 로드
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+        const baseURL = "./vendor/ffmpeg";
         await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+          coreURL: await toBlobURLFn(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURLFn(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
         });
         
         loaded = true;
@@ -442,7 +453,7 @@
         setStatus("Loading/writing file...");
         logBox.textContent = "";
 
-        await ffmpeg.writeFile(inName, await fetchFile(file));
+        await ffmpeg.writeFile(inName, await fetchFileFn(file));
 
         setStatus("Converting... (Browser may lag briefly)");
         await ffmpeg.exec([
