@@ -432,7 +432,7 @@
         logBox.textContent = "";
 
         // 가상 FS에 입력 파일 쓰기
-        ffmpeg.FS("writeFile", inName, await fetchFile(file));
+        await ffmpeg.writeFile(inName, await fetchFile(file));
 
         // 변환 옵션:
         // -i input.wav
@@ -440,18 +440,18 @@
         // -b:a 128k : 비트레이트
         // -vn : 영상 스트림 무시(안전)
         setStatus("변환 중... (브라우저가 잠시 버벅일 수 있어요)");
-        await ffmpeg.run(
+        await ffmpeg.exec([
           "-i", inName,
           "-codec:a", "libmp3lame",
           "-b:a", bitrate.value,
           "-vn",
           outName
-        );
+        ]);
 
         setStatus("결과 추출/다운로드 준비 중...");
-        const data = ffmpeg.FS("readFile", outName);
+        const data = await ffmpeg.readFile(outName);
 
-        const mp3Blob = new Blob([data.buffer], { type: "audio/mpeg" });
+        const mp3Blob = new Blob([data], { type: "audio/mpeg" });
         const url = URL.createObjectURL(mp3Blob);
 
         // 다운로드 파일명: 원본이름 기반
