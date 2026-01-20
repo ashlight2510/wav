@@ -360,9 +360,13 @@
     </div>
   </div>
 
-  <!-- ffmpeg.wasm (ESM with correct path) -->
-  <script type="module">
-    import { createFFmpeg, fetchFile } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/+esm";
+  <!-- ffmpeg.wasm (UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.min.js"></script>
+  <script>
+    // UMD 버전: FFmpegWasm 네임스페이스 사용
+    const { FFmpeg } = FFmpegWasm;
+    const { fetchFile, toBlobURL } = FFmpegUtil;
 
     const $ = (id) => document.getElementById(id);
     const wavFile = $("wavFile");
@@ -461,8 +465,8 @@
         log("Conversion complete! Click the download link above.");
 
         try {
-          ffmpeg.FS("unlink", inName);
-          ffmpeg.FS("unlink", outName);
+          await ffmpeg.deleteFile(inName);
+          await ffmpeg.deleteFile(outName);
         } catch (_) {}
       } catch (e) {
         console.error(e);

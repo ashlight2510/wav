@@ -399,12 +399,6 @@
           corePath: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js"
         });
 
-        ffmpeg.setLogger(({ type, message }) => {
-          // type: info, fferr, ffout 등
-          log(message);
-        });
-
-        await ffmpeg.load();
         loaded = true;
 
         setStatus("로드 완료 ✅ 파일 선택 후 변환하세요");
