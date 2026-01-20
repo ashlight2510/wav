@@ -383,6 +383,8 @@
 
     let ffmpeg = null;
     let loaded = false;
+    let fetchFileFn = null;
+    let toBlobURLFn = null;
 
     btnLoad.addEventListener("click", async () => {
       const ffmpegNS = window.FFmpegWASM || window.FFmpegWasm || window.FFmpeg || {};
@@ -398,6 +400,9 @@
         return;
       }
 
+      fetchFileFn = fetchFile;
+      toBlobURLFn = toBlobURL;
+
       try {
         btnLoad.disabled = true;
         logBox.textContent = "";
@@ -410,8 +415,8 @@
 
         const baseURL = "./vendor/ffmpeg";
         await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm")
+          coreURL: await toBlobURLFn(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+          wasmURL: await toBlobURLFn(`${baseURL}/ffmpeg-core.wasm`, "application/wasm")
         });
 
         loaded = true;
@@ -445,7 +450,7 @@
         setStatus("파일 로딩/쓰기 중...");
         logBox.textContent = "";
 
-        await ffmpeg.writeFile(inName, await fetchFile(file));
+        await ffmpeg.writeFile(inName, await fetchFileFn(file));
 
         setStatus("변환 중... (브라우저가 잠시 버벅일 수 있어요)");
         await ffmpeg.exec([
