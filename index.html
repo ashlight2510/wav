@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WAV → MP3 변환기 (브라우저)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; line-height: 1.5; }
+    .card { max-width: 720px; border: 1px solid #ddd; border-radius: 12px; padding: 16px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+    label { font-weight: 600; }
+    input[type="file"] { width: 100%; }
+    select, button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; }
+    button { cursor: pointer; }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .muted { color: #666; font-size: 14px; }
+    .log { white-space: pre-wrap; background: #fafafa; border: 1px solid #eee; padding: 12px; border-radius: 10px; height: 180px; overflow: auto; }
+    .ok { color: #0a7; font-weight: 700; }
+    .warn { color: #b60; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 style="margin:0 0 8px;">WAV → MP3 변환기</h1>
+    <div class="muted">
+      변환은 브라우저에서만 수행됩니다. (서버 업로드 없음)  
+      MP3 인코딩을 위해 ffmpeg.wasm을 로드합니다.
+    </div>
+
+    <div class="row" style="margin-top:16px;">
+      <label for="wavFile">WAV 파일</label>
+      <input id="wavFile" type="file" accept=".wav,audio/wav" />
+    </div>
+
+    <div class="row">
+      <label for="bitrate">MP3 비트레이트</label>
+      <select id="bitrate">
+        <option value="96k">96 kbps</option>
+        <option value="128k" selected>128 kbps</option>
+        <option value="192k">192 kbps</option>
+        <option value="256k">256 kbps</option>
+        <option value="320k">320 kbps</option>
+      </select>
+
+      <button id="btnLoad">1) 변환 엔진 로드</button>
+      <button id="btnConvert" disabled>2) MP3로 변환</button>
+    </div>
+
+    <div class="row">
+      <div id="status" class="muted">상태: 대기 중</div>
+    </div>
+
+    <div class="row">
+      <a id="download" href="#" download style="display:none; font-weight:700;">MP3 다운로드</a>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <div class="muted" style="margin-top:12px;">
+      <span class="warn">팁</span>:
+      파일이 크면(수십~수백 MB) 변환에 시간이 걸리고, 모바일은 메모리 부족으로 실패할 수 있어요.
+    </div>
+  </div>
+
+  <!-- ffmpeg.wasm (ESM) -->
+  <script type="module">
+    import { createFFmpeg, fetchFile } from "https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/ffmpeg.min.js";
+
+    const $ = (id) => document.getElementById(id);
+    const wavFile = $("wavFile");
+    const bitrate = $("bitrate");
+    const btnLoad = $("btnLoad");
+    const btnConvert = $("btnConvert");
+    const status = $("status");
+    const logBox = $("log");
+    const download = $("download");
+
+    const log = (msg) => {
+      logBox.textContent += msg + "\\n";
+      logBox.scrollTop = logBox.scrollHeight;
+    };
+
+    let ffmpeg = null;
+    let loaded = false;
+
+    function setStatus(text) {
+      status.textContent = "상태: " + text;
+    }
+
+    btnLoad.addEventListener("click", async () => {
+      try {
+        btnLoad.disabled = true;
+        setStatus("변환 엔진 로드 중...");
+        logBox.textContent = "";
+
+        // corePath 지정 없이도 동작하지만, 환경에 따라 명시가 안정적인 경우가 있습니다.
+        ffmpeg = createFFmpeg({
+          log: true,
+          // 필요 시 corePath를 고정할 수 있음(환경별 이슈 대응용):
+          // corePath: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js"
+        });
+
+        ffmpeg.setLogger(({ type, message }) => {
+          // type: info, fferr, ffout 등
+          log(message);
+        });
+
+        await ffmpeg.load();
+        loaded = true;
+
+        setStatus("로드 완료 ✅ 파일 선택 후 변환하세요");
+        btnConvert.disabled = false;
+      } catch (e) {
+        console.error(e);
+        setStatus("로드 실패 ❌ (콘솔 확인)");
+        log("로드 실패: " + (e?.message ?? String(e)));
+        btnLoad.disabled = false;
+      }
+    });
+
+    btnConvert.addEventListener("click", async () => {
+      if (!loaded || !ffmpeg) return;
+
+      const file = wavFile.files?.[0];
+      if (!file) {
+        setStatus("WAV 파일을 먼저 선택하세요");
+        return;
+      }
+
+      download.style.display = "none";
+      download.href = "#";
+
+      const inName = "input.wav";
+      const outName = "output.mp3";
+
+      try {
+        btnConvert.disabled = true;
+        setStatus("파일 로딩/쓰기 중...");
+        logBox.textContent = "";
+
+        // 가상 FS에 입력 파일 쓰기
+        ffmpeg.FS("writeFile", inName, await fetchFile(file));
+
+        // 변환 옵션:
+        // -i input.wav
+        // -codec:a libmp3lame : mp3 인코더
+        // -b:a 128k : 비트레이트
+        // -vn : 영상 스트림 무시(안전)
+        setStatus("변환 중... (브라우저가 잠시 버벅일 수 있어요)");
+        await ffmpeg.run(
+          "-i", inName,
+          "-codec:a", "libmp3lame",
+          "-b:a", bitrate.value,
+          "-vn",
+          outName
+        );
+
+        setStatus("결과 추출/다운로드 준비 중...");
+        const data = ffmpeg.FS("readFile", outName);
+
+        const mp3Blob = new Blob([data.buffer], { type: "audio/mpeg" });
+        const url = URL.createObjectURL(mp3Blob);
+
+        // 다운로드 파일명: 원본이름 기반
+        const base = file.name.replace(/\\.wav$/i, "");
+        download.download = base + ".mp3";
+        download.href = url;
+        download.style.display = "inline-block";
+        download.textContent = "MP3 다운로드 (" + download.download + ")";
+
+        setStatus("완료 ✅");
+        log("변환 완료! 위의 다운로드 링크를 클릭하세요.");
+
+        // 정리(선택): FS 파일 삭제
+        try {
+          ffmpeg.FS("unlink", inName);
+          ffmpeg.FS("unlink", outName);
+        } catch (_) {}
+      } catch (e) {
+        console.error(e);
+        setStatus("변환 실패 ❌ (콘솔 확인)");
+        log("변환 실패: " + (e?.message ?? String(e)));
+      } finally {
+        btnConvert.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
+ 
