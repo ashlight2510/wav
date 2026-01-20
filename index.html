@@ -361,10 +361,12 @@
   </div>
 
   <!-- ffmpeg.wasm (UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.min.js"></script>
   <script>
-    // UMD 버전에서는 전역 객체 이름이 다를 수 있음
-    const { createFFmpeg, fetchFile } = window.FFmpeg || FFmpeg || window;
+    // UMD 버전: FFmpegWasm 네임스페이스 사용
+    const { FFmpeg } = FFmpegWasm;
+    const { fetchFile, toBlobURL } = FFmpegUtil;
 
     const $ = (id) => document.getElementById(id);
     const wavFile = $("wavFile");
@@ -393,12 +395,21 @@
         setStatus("변환 엔진 로드 중...");
         logBox.textContent = "";
 
-        // corePath를 jsdelivr로 지정하여 CORS 문제 해결
-        ffmpeg = createFFmpeg({
-          log: true,
-          corePath: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js"
+        // FFmpeg 인스턴스 생성
+        ffmpeg = new FFmpeg();
+        
+        // 로그 설정
+        ffmpeg.on('log', ({ message }) => {
+          log(message);
         });
 
+        // Core와 WASM 파일 로드
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+        
         loaded = true;
 
         setStatus("로드 완료 ✅ 파일 선택 후 변환하세요");
@@ -466,8 +477,8 @@
 
         // 정리(선택): FS 파일 삭제
         try {
-          ffmpeg.FS("unlink", inName);
-          ffmpeg.FS("unlink", outName);
+          await ffmpeg.deleteFile(inName);
+          await ffmpeg.deleteFile(outName);
         } catch (_) {}
       } catch (e) {
         console.error(e);
