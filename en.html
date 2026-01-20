@@ -360,10 +360,9 @@
     </div>
   </div>
 
-  <!-- ffmpeg.wasm (UMD) -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.min.js"></script>
-  <script>
-    const { createFFmpeg, fetchFile } = FFmpeg;
+  <!-- ffmpeg.wasm (ESM with correct path) -->
+  <script type="module">
+    import { createFFmpeg, fetchFile } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/+esm";
 
     const $ = (id) => document.getElementById(id);
     const wavFile = $("wavFile");
