@@ -395,17 +395,21 @@
         setStatus("Loading converter engine...");
         logBox.textContent = "";
 
-        // corePath를 jsdelivr로 지정하여 CORS 문제 해결
-        ffmpeg = createFFmpeg({
-          log: true,
-          corePath: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js"
-        });
-
-        ffmpeg.setLogger(({ type, message }) => {
+        // FFmpeg 인스턴스 생성
+        ffmpeg = new FFmpeg();
+        
+        // 로그 설정
+        ffmpeg.on('log', ({ message }) => {
           log(message);
         });
 
-        await ffmpeg.load();
+        // Core와 WASM 파일 로드
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+        
         loaded = true;
 
         setStatus("Loaded ✅ Please select a file and convert");
