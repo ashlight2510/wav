@@ -364,10 +364,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.min.js"></script>
   <script>
-    // UMD 버전: FFmpegWasm 네임스페이스 사용
-    const { FFmpeg } = FFmpegWasm;
-    const { fetchFile, toBlobURL } = FFmpegUtil;
-
     const $ = (id) => document.getElementById(id);
     const wavFile = $("wavFile");
     const bitrate = $("bitrate");
@@ -382,112 +378,125 @@
       logBox.scrollTop = logBox.scrollHeight;
     };
 
-    let ffmpeg = null;
-    let loaded = false;
-
     function setStatus(text) {
       status.textContent = "상태: " + text;
     }
 
-    btnLoad.addEventListener("click", async () => {
-      try {
-        btnLoad.disabled = true;
-        setStatus("변환 엔진 로드 중...");
-        logBox.textContent = "";
+    const ffmpegNS = window.FFmpegWasm || window.FFmpeg;
+    const utilNS = window.FFmpegUtil;
 
-        // FFmpeg 인스턴스 생성
-        ffmpeg = new FFmpeg();
-        
-        // 로그 설정
-        ffmpeg.on('log', ({ message }) => {
-          log(message);
-        });
+    if (!ffmpegNS || !utilNS) {
+      setStatus("FFmpeg 스크립트 로드 실패 ❌");
+      log("FFmpeg 스크립트를 불러오지 못했습니다. 네트워크/차단 여부를 확인하세요.");
+      btnLoad.disabled = true;
+      btnConvert.disabled = true;
+    } else {
+      const { FFmpeg } = ffmpegNS;
+      const { fetchFile, toBlobURL } = utilNS;
 
-        // Core와 WASM 파일 로드
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
-        await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        });
-        
-        loaded = true;
+      let ffmpeg = null;
+      let loaded = false;
 
-        setStatus("로드 완료 ✅ 파일 선택 후 변환하세요");
-        btnConvert.disabled = false;
-      } catch (e) {
-        console.error(e);
-        setStatus("로드 실패 ❌ (콘솔 확인)");
-        log("로드 실패: " + (e?.message ?? String(e)));
-        btnLoad.disabled = false;
-      }
-    });
-
-    btnConvert.addEventListener("click", async () => {
-      if (!loaded || !ffmpeg) return;
-
-      const file = wavFile.files?.[0];
-      if (!file) {
-        setStatus("WAV 파일을 먼저 선택하세요");
-        return;
-      }
-
-      download.style.display = "none";
-      download.href = "#";
-
-      const inName = "input.wav";
-      const outName = "output.mp3";
-
-      try {
-        btnConvert.disabled = true;
-        setStatus("파일 로딩/쓰기 중...");
-        logBox.textContent = "";
-
-        // 가상 FS에 입력 파일 쓰기
-        await ffmpeg.writeFile(inName, await fetchFile(file));
-
-        // 변환 옵션:
-        // -i input.wav
-        // -codec:a libmp3lame : mp3 인코더
-        // -b:a 128k : 비트레이트
-        // -vn : 영상 스트림 무시(안전)
-        setStatus("변환 중... (브라우저가 잠시 버벅일 수 있어요)");
-        await ffmpeg.exec([
-          "-i", inName,
-          "-codec:a", "libmp3lame",
-          "-b:a", bitrate.value,
-          "-vn",
-          outName
-        ]);
-
-        setStatus("결과 추출/다운로드 준비 중...");
-        const data = await ffmpeg.readFile(outName);
-
-        const mp3Blob = new Blob([data], { type: "audio/mpeg" });
-        const url = URL.createObjectURL(mp3Blob);
-
-        // 다운로드 파일명: 원본이름 기반
-        const base = file.name.replace(/\\.wav$/i, "");
-        download.download = base + ".mp3";
-        download.href = url;
-        download.style.display = "inline-block";
-        download.textContent = "MP3 다운로드 (" + download.download + ")";
-
-        setStatus("완료 ✅");
-        log("변환 완료! 위의 다운로드 링크를 클릭하세요.");
-
-        // 정리(선택): FS 파일 삭제
+      btnLoad.addEventListener("click", async () => {
         try {
-          await ffmpeg.deleteFile(inName);
-          await ffmpeg.deleteFile(outName);
-        } catch (_) {}
-      } catch (e) {
-        console.error(e);
-        setStatus("변환 실패 ❌ (콘솔 확인)");
-        log("변환 실패: " + (e?.message ?? String(e)));
-      } finally {
-        btnConvert.disabled = false;
-      }
-    });
+          btnLoad.disabled = true;
+          setStatus("변환 엔진 로드 중...");
+          logBox.textContent = "";
+
+          // FFmpeg 인스턴스 생성
+          ffmpeg = new FFmpeg();
+          
+          // 로그 설정
+          ffmpeg.on('log', ({ message }) => {
+            log(message);
+          });
+
+          // Core와 WASM 파일 로드
+          const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+          await ffmpeg.load({
+            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+          });
+          
+          loaded = true;
+
+          setStatus("로드 완료 ✅ 파일 선택 후 변환하세요");
+          btnConvert.disabled = false;
+        } catch (e) {
+          console.error(e);
+          setStatus("로드 실패 ❌ (콘솔 확인)");
+          log("로드 실패: " + (e?.message ?? String(e)));
+          btnLoad.disabled = false;
+        }
+      });
+
+      btnConvert.addEventListener("click", async () => {
+        if (!loaded || !ffmpeg) return;
+
+        const file = wavFile.files?.[0];
+        if (!file) {
+          setStatus("WAV 파일을 먼저 선택하세요");
+          return;
+        }
+
+        download.style.display = "none";
+        download.href = "#";
+
+        const inName = "input.wav";
+        const outName = "output.mp3";
+
+        try {
+          btnConvert.disabled = true;
+          setStatus("파일 로딩/쓰기 중...");
+          logBox.textContent = "";
+
+          // 가상 FS에 입력 파일 쓰기
+          await ffmpeg.writeFile(inName, await fetchFile(file));
+
+          // 변환 옵션:
+          // -i input.wav
+          // -codec:a libmp3lame : mp3 인코더
+          // -b:a 128k : 비트레이트
+          // -vn : 영상 스트림 무시(안전)
+          setStatus("변환 중... (브라우저가 잠시 버벅일 수 있어요)");
+          await ffmpeg.exec([
+            "-i", inName,
+            "-codec:a", "libmp3lame",
+            "-b:a", bitrate.value,
+            "-vn",
+            outName
+          ]);
+
+          setStatus("결과 추출/다운로드 준비 중...");
+          const data = await ffmpeg.readFile(outName);
+
+          const mp3Blob = new Blob([data], { type: "audio/mpeg" });
+          const url = URL.createObjectURL(mp3Blob);
+
+          // 다운로드 파일명: 원본이름 기반
+          const base = file.name.replace(/\\.wav$/i, "");
+          download.download = base + ".mp3";
+          download.href = url;
+          download.style.display = "inline-block";
+          download.textContent = "MP3 다운로드 (" + download.download + ")";
+
+          setStatus("완료 ✅");
+          log("변환 완료! 위의 다운로드 링크를 클릭하세요.");
+
+          // 정리(선택): FS 파일 삭제
+          try {
+            await ffmpeg.deleteFile(inName);
+            await ffmpeg.deleteFile(outName);
+          } catch (_) {}
+        } catch (e) {
+          console.error(e);
+          setStatus("변환 실패 ❌ (콘솔 확인)");
+          log("변환 실패: " + (e?.message ?? String(e)));
+        } finally {
+          btnConvert.disabled = false;
+        }
+      });
+    }
   </script>
 </body>
 </html>
